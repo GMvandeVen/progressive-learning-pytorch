@@ -82,7 +82,8 @@ def run(args, verbose=False):
         name=args.experiment, tasks=args.tasks, data_dir=args.d_dir,
         normalize=True if utils.checkattr(args, "normalize") else False,
         augment=True if utils.checkattr(args, "augment") else False,
-        verbose=verbose, exception=True if args.seed<10 else False, only_test=(not args.train)
+        verbose=verbose, exception=True if args.seed<10 else False, only_test=(not args.train),
+        max_samples=args.max_samples
     )
 
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 import os
 import numpy as np
 from param_stamp import get_param_stamp_from_args
@@ -24,6 +23,7 @@ def handle_inputs():
     parser = options.add_allocation_options(parser, **kwargs)
     # Parse, process (i.e., set defaults for unselected options) and check chosen options
     parser.add_argument('--n-seeds', type=int, default=1)
+    parser.add_argument('--exact', action='store_true', help="use 'exact' replay, instead of 'offline' replay")
     args = parser.parse_args()
     options.set_defaults(args, **kwargs)
     options.check_for_errors(args, **kwargs)
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     args.reinit = False
 
     ## Replay All
-    args.replay = "offline"
+    args.replay = "exact" if args.exact else "offline"
     OFF_P = {}
     OFF_P = collect_all(OFF_P, seed_list, args, name="Replay All (pre-trained conv-layers)")
     args.replay = "none"
@@ -149,7 +149,7 @@ if __name__ == '__main__':
     args.reinit = False
 
     ## Replay All
-    args.replay = "offline"
+    args.replay = "exact" if args.exact else "offline"
     OFF = {}
     OFF = collect_all(OFF, seed_list, args, name="Replay All")
     args.replay = "none"

@@ -3,7 +3,7 @@ import numpy as np
 from torchvision import transforms
 from torch.utils.data import ConcatDataset
 from data.available import AVAILABLE_DATASETS, AVAILABLE_TRANSFORMS, DATASET_CONFIGS
-from data.manipulate import ReducedDataset, SubDataset, TransformedDataset, permutate_image_pixels
+from data.manipulate import ReducedDataset, ReducedSubDataset, SubDataset, TransformedDataset, permutate_image_pixels
 
 def get_dataset(name, type='train', download=True, capacity=None, permutation=None, dir='./store/datasets',
                 verbose=False, augment=False, normalize=False, target_transform=None, valid_prop=0.):
@@ -81,7 +81,7 @@ def get_singletask_experiment(name, data_dir="./store/datasets", normalize=False
 
 
 def get_multitask_experiment(name, tasks, data_dir="./store/datasets", normalize=False, augment=False,
-                             only_config=False, verbose=False, exception=False, only_test=False):
+                             only_config=False, verbose=False, exception=False, only_test=False, max_samples=None):
     '''Load, organize and return train- and test-dataset for requested multi-task experiment.'''
 
     ## NOTE: option 'normalize' and 'augment' only implemented for CIFAR-based experiments.
@@ -173,7 +173,11 @@ def get_multitask_experiment(name, tasks, data_dir="./store/datasets", normalize
             for labels in labels_per_task:
                 target_transform = None
                 if not only_test:
-                    train_datasets.append(SubDataset(cifar100_train, labels, target_transform=target_transform))
+                    if max_samples is None:
+                        train_datasets.append(SubDataset(cifar100_train, labels, target_transform=target_transform))
+                    else:
+                        train_datasets.append(ReducedSubDataset(cifar100_train, labels,
+                                                                target_transform=target_transform, max=max_samples))
                 test_datasets.append(SubDataset(cifar100_test, labels, target_transform=target_transform))
     else:
         raise RuntimeError('Given undefined experiment: {}'.format(name))

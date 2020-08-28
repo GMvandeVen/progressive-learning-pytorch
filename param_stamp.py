@@ -31,9 +31,10 @@ def get_param_stamp(args, model_name, verbose=True, replay=False):
     multi_n_stamp = "{n}{of}".format(
         n=args.tasks, of="OL" if checkattr(args, 'only_last') else ""
     ) if hasattr(args, "tasks") else ""
-    task_stamp = "{exp}{norm}{aug}{multi_n}".format(
+    task_stamp = "{exp}{norm}{aug}{multi_n}{max_n}".format(
         exp=args.experiment, norm="-N" if hasattr(args, 'normalize') and args.normalize else "",
-        aug="+" if hasattr(args, "augment") and args.augment else "", multi_n=multi_n_stamp
+        aug="+" if hasattr(args, "augment") and args.augment else "", multi_n=multi_n_stamp,
+        max_n="" if (not args.experiment=="CIFAR100") or args.max_samples is None else "-max{}".format(args.max_samples)
     )
     if verbose:
         print(" --> task:          "+task_stamp)
