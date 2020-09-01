@@ -144,7 +144,7 @@ class Precision_hyperParams(dj.Computed):
         )
 
         # Get param-stamp
-        args_stamp = ["python3 main_cl.py"] + ["--get-stamp"] + opt_stat.split()
+        args_stamp = ["python3"] + ["main_cl.py"] + ["--get-stamp"] + opt_stat.split()
         output = subprocess.run(args_stamp, stdout=subprocess.PIPE)
         param_stamp = output.stdout.decode().strip('\n')
         print(param_stamp)
@@ -152,7 +152,7 @@ class Precision_hyperParams(dj.Computed):
         # Train the network with these hyper-parameters
         if not os.path.isfile('{}/results/prec-{}.txt'.format(store_dir, param_stamp)):
             print("\n\n  ...running...")
-            args_run = ["python3 main_cl.py"] + opt_stat.split()
+            args_run = ["python3"] + ["main_cl.py"] + opt_stat.split()
             output = subprocess.run(args_run, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             # write output & errors to "result"-files
             out_file = open("{}/results/jjOutput-{}".format(store_dir, param_stamp), "w")
