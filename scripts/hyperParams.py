@@ -46,6 +46,14 @@ preL = ['no']
 depthL = [0]
 max_samplesL = [500]
 
+# -standard, 500 training-samples (pretrained & not pretrained)
+lrL = [0.0001]
+fc_unitsL = [2000]
+iterL = [500]
+depthL = [5]
+preL = ['yes', 'no']
+max_samplesL = [50]
+
 
 # Grid-searches EWC/SI/XdG
 lamdaL = [1., 10., 100., 1000., 10000., 100000., 1000000., 10000000., 100000000., 1000000000., 10000000000.,
