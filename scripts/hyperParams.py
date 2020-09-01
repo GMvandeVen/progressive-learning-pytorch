@@ -54,6 +54,14 @@ depthL = [5]
 preL = ['yes', 'no']
 max_samplesL = [50]
 
+# -no conv-layers (as in original ProgLearn-paper)
+lrL = [0.001, 0.0001]
+fc_unitsL = [400]
+iterL = [2000]
+preL = ['no']
+depthL = [0]
+max_samplesL = [50]
+
 
 # Grid-searches EWC/SI/XdG
 lamdaL = [1., 10., 100., 1000., 10000., 100000., 1000000., 10000000., 100000000., 1000000000., 10000000000.,
