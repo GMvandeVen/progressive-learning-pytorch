@@ -259,7 +259,7 @@ if __name__ == '__main__':
         BTEs.append(calc_mean_bte(BTEs_this_alg, task_num=args.tasks, reps=len(seed_list)))
         FTEs.append(calc_mean_te(FTEs_this_alg))
         TEs.append(calc_mean_te(TEs_this_alg))
-    figure = visual_plt.plot_TEs(FTEs, BTEs, TEs, names, task_num=args.tasks)
+    figure = visual_plt.plot_TEs(FTEs, BTEs, TEs, names, task_num=args.tasks, y_lim=(0.89, 1.31))
     figure_list.append(figure)
 
 

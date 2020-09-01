@@ -59,7 +59,8 @@ def add_task_options(parser, only_MNIST=False, single_task=False, **kwargs):
         task_choices = MNIST_tasks if only_MNIST else MNIST_tasks+image_tasks
         task_default = 'splitMNIST' if only_MNIST else 'CIFAR100'
     task_params.add_argument('--experiment', type=str, default=task_default, choices=task_choices)
-    task_params.add_argument('--max-samples', type=int, help="at most use this much samples per class (only CIFAR-100)")
+    task_params.add_argument('--max-samples', type=int, metavar="N",
+                             help="at most use N samples per class (only CIFAR-100)")
     if not single_task:
         task_params.add_argument('--tasks', type=int, help='number of tasks')
     if not only_MNIST:

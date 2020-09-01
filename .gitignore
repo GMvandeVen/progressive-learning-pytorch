@@ -9,3 +9,6 @@ __pycache__/
 
 docker/
 notebooks/
+
+test/
+single_*

@@ -33,7 +33,7 @@ def stratified_scatter(te_dict, axis_handle, s, names):
                 c='k'
             )
 
-def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None):
+def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None, y_lim=None):
     '''Based on https://github.com/neurodata/progressive-learning.'''
 
 
@@ -55,7 +55,8 @@ def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None):
         ax.plot(np.arange(1, 1+task_num), fte, color=clr_palette[i], marker='.', markersize=12, label=alg_name[i])
     ax.set_xticks(np.arange(1, 1+task_num))
     ax.set_yticks([0.9, 1, 1.1, 1.2, 1.3, 1.4])
-    ax.set_ylim(0.89, 1.31)
+    if y_lim is not None:
+        ax.set_ylim(y_lim)
     ax.tick_params(labelsize=ticksize)
     ax.set_ylabel('Forward Transfer Efficiency (FTE)', fontsize=fontsize)
     ax.set_xlabel('Number of tasks seen', fontsize=fontsize)
@@ -80,7 +81,8 @@ def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None):
     ax.set_ylabel('Backward Transfer Efficiency (BTE)', fontsize=fontsize)
     ax.set_yticks([.4, .6, .8, .9, 1, 1.1, 1.2, 1.3])
     ax.set_xticks(np.arange(1, task_num))
-    ax.set_ylim(0.89, 1.31)
+    if y_lim is not None:
+        ax.set_ylim(y_lim)
     ax.tick_params(labelsize=ticksize)
     # ax[0][1].grid(axis='x')
     right_side = ax.spines["right"]
@@ -116,7 +118,8 @@ def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None):
         alg_name,
         fontsize=20, rotation=45, ha="right", rotation_mode='anchor'
     )
-    ax.set_ylim(0.89, 1.31)
+    if y_lim is not None:
+        ax.set_ylim(y_lim)
 
     stratified_scatter(te_dict, ax, 16, names=alg_name)
 

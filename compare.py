@@ -130,10 +130,10 @@ if __name__ == '__main__':
 
     ###----"BASELINES"----###
 
-    # ## None
-    # args.replay = "none"
-    # NONE = {}
-    # NONE = collect_all(NONE, seed_list, args, name="None")
+    ## None
+    args.replay = "none"
+    NONE = {}
+    NONE = collect_all(NONE, seed_list, args, name="None")
 
     ## Offline
     args.replay = "offline"
@@ -155,10 +155,10 @@ if __name__ == '__main__':
 
     if not args.only_all_replay:
 
-        # ## EWC
-        # args.ewc = True
-        # EWC = {}
-        # EWC = collect_all(EWC, seed_list, args, name="EWC")
+        ## EWC
+        args.ewc = True
+        EWC = {}
+        EWC = collect_all(EWC, seed_list, args, name="EWC")
 
         ## online EWC
         # NOTE: using same `lambda` for EWC and Online EWC!!
@@ -218,15 +218,15 @@ if __name__ == '__main__':
             prec[seed] = [OFF[seed][i][key]]  # , ER[seed][i][key]]
         else:
             i = 0
-            ave_prec[seed] = [OFF[seed][i], OEWC[seed][i], SI[seed][i],
+            ave_prec[seed] = [OFF[seed][i], NONE[seed][i], EWC[seed][i], OEWC[seed][i], SI[seed][i],
                               LWF[seed][i]]#, ER[seed][i]]
 
             i = 1
-            metric_dict[seed] = [OFF[seed][i], OEWC[seed][i], SI[seed][i],
+            metric_dict[seed] = [OFF[seed][i], NONE[seed][i], EWC[seed][i], OEWC[seed][i], SI[seed][i],
                                  LWF[seed][i]]#, ER[seed][i]]
 
             key = "average"
-            prec[seed] = [OFF[seed][i][key], OEWC[seed][i][key],
+            prec[seed] = [OFF[seed][i][key], NONE[seed][i][key], EWC[seed][i][key], OEWC[seed][i][key],
                           SI[seed][i][key], LWF[seed][i][key]]#, ER[seed][i][key]]
 
 
@@ -248,9 +248,9 @@ if __name__ == '__main__':
         colors = ["black"]
         ids = [0]
     else:
-        names = ["Replay Sll", "Online EWC", "SI", "LwF"]#, "Experience Replay"]
-        colors = ["black", "blue", "green", "goldenrod"]#, "red"]
-        ids = [0,1,2,3]#,6]
+        names = ["Replay All", "EWC", "Online EWC", "SI", "LwF", "None"]#, "Experience Replay"]
+        colors = ["black", "lightblue", "blue", "green", "goldenrod", "grey"]#, "red"]
+        ids = [0,2,3,4,5,1]#,6]
 
     # open pdf
     pp = visual_plt.open_pdf("{}/{}.pdf".format(args.p_dir, plot_name))
@@ -318,7 +318,7 @@ if __name__ == '__main__':
         BTEs.append(calc_mean_bte(BTEs_this_alg, task_num=args.tasks, reps=len(seed_list)))
         FTEs.append(calc_mean_te(FTEs_this_alg))
         TEs.append(calc_mean_te(TEs_this_alg))
-    figure = visual_plt.plot_TEs(FTEs, BTEs, TEs, names, task_num=args.tasks)
+    figure = visual_plt.plot_TEs(FTEs, BTEs, TEs, names, task_num=args.tasks, y_lim=(0.5, 1.2))
     figure_list.append(figure)
 
 
