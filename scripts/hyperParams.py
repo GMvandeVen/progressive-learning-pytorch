@@ -34,7 +34,7 @@ fc_unitsL = [2000]#[200, 400]#, 2000]
 fc_layersL = [3]
 max_samplesL = [500]
 depthL = [5]
-preL = ['yes']
+preL = ['yes', 'no']
 
 # Grid-searches EWC/SI/XdG
 lamdaL = [1., 10., 100., 1000., 10000., 100000., 1000000., 10000000., 100000000., 1000000000., 10000000000.,
