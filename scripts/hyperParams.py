@@ -28,13 +28,24 @@ store_dir = "/src/store"
 
 # Which parameter-combinations should be explored?
 seedL = [11]#, 11]#, 10]
-iterL = [5000]#, 2000]
-lrL = [0.0001]
-fc_unitsL = [2000]#[200, 400]#, 2000]
 fc_layersL = [3]
-max_samplesL = [500]
+
+# -standard, 5000 training-samples (pretrained & not pretrained)
+lrL = [0.0001]
+fc_unitsL = [2000]
+iterL = [5000]
 depthL = [5]
 preL = ['yes', 'no']
+max_samplesL = [500]
+
+# -no conv-layers (as in original ProgLearn-paper)
+lrL = [0.001, 0.0001]
+fc_unitsL = [400]
+iterL = [2000]
+preL = ['no']
+depthL = [0]
+max_samplesL = [500]
+
 
 # Grid-searches EWC/SI/XdG
 lamdaL = [1., 10., 100., 1000., 10000., 100000., 1000000., 10000000., 100000000., 1000000000., 10000000000.,
