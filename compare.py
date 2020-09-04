@@ -24,7 +24,7 @@ def handle_inputs():
     parser = options.add_allocation_options(parser, **kwargs)
     # Parse, process (i.e., set defaults for unselected options) and check chosen options
     parser.add_argument('--n-seeds', type=int, default=1)
-    parser.add_argument('--only-all-replay', action='store_true')
+    parser.add_argument('--o-lambda', type=float, help="--> Online EWC: regularisation strength")
     args = parser.parse_args()
     options.set_defaults(args, **kwargs)
     options.check_for_errors(args, **kwargs)
@@ -135,64 +135,47 @@ if __name__ == '__main__':
     NONE = {}
     NONE = collect_all(NONE, seed_list, args, name="None")
 
-    ## Offline
-    args.replay = "offline"
-    OFF = {}
-    OFF = collect_all(OFF, seed_list, args, name="Replay all")
-    args.replay = "none"
-
-
-    # ###----"TASK-SPECIFIC"----####
-    #
-    # ## XdG
-    # args.xdg = True
-    # XDG = {}
-    # XDG = collect_all(XDG, seed_list, args, name="XdG")
-    # args.xdg = False
-
 
     ###----"REGULARIZATION"----####
 
-    if not args.only_all_replay:
+    ## EWC
+    args.ewc = True
+    EWC = {}
+    EWC = collect_all(EWC, seed_list, args, name="EWC")
 
-        ## EWC
-        args.ewc = True
-        EWC = {}
-        EWC = collect_all(EWC, seed_list, args, name="EWC")
+    ## online EWC
+    args.online = True
+    args.ewc = True
+    args.ewc_lambda = args.o_lambda
+    OEWC = {}
+    OEWC = collect_all(OEWC, seed_list, args, name="Online EWC")
+    args.ewc = False
+    args.online = False
 
-        ## online EWC
-        # NOTE: using same `lambda` for EWC and Online EWC!!
-        args.online = True
-        args.ewc = True
-        OEWC = {}
-        OEWC = collect_all(OEWC, seed_list, args, name="Online EWC")
-        args.ewc = False
-        args.online = False
-
-        ## SI
-        args.si = True
-        SI = {}
-        SI = collect_all(SI, seed_list, args, name="SI")
-        args.si = False
+    ## SI
+    args.si = True
+    SI = {}
+    SI = collect_all(SI, seed_list, args, name="SI")
+    args.si = False
 
 
-        ###----"REPLAY"----###
+    ###----"REPLAY"----###
 
-        ## LwF
-        args.replay = "current"
-        args.distill = True
-        LWF = {}
-        LWF = collect_all(LWF, seed_list, args, name="LwF")
+    ## LwF
+    args.replay = "current"
+    args.distill = True
+    LWF = {}
+    LWF = collect_all(LWF, seed_list, args, name="LwF")
 
-        # ## ER
-        # args.replay = "exemplars"
-        # args.distill = False
-        # args.agem = False
-        # ER = {}
-        # ER = collect_all(ER, seed_list, args, name="ER (budget = {})".format(args.budget))
-        # args.replay = "none"
-        # args.agem = False
+    ## Offline
+    args.replay = "offline"
+    OFF = {}
+    OFF = collect_all(OFF, seed_list, args, name="Full replay (increasing amount of replay with each new task)")
 
+    ## Exact replay
+    args.replay = "exact"
+    EXACT = {}
+    EXACT = collect_all(EXACT, seed_list, args, name="Exact replay (fixed amount of total replay)")
 
 
     #-------------------------------------------------------------------------------------------------#
@@ -207,27 +190,17 @@ if __name__ == '__main__':
 
     ## For each seed, create list with average precisions
     for seed in seed_list:
-        if args.only_all_replay:
-            i = 0
-            ave_prec[seed] = [OFF[seed][i]]  # , ER[seed][i]]
+        i = 0
+        ave_prec[seed] = [OFF[seed][i], NONE[seed][i], EWC[seed][i], OEWC[seed][i], SI[seed][i],
+                          LWF[seed][i], EXACT[seed][i]]#, ER[seed][i]]
 
-            i = 1
-            metric_dict[seed] = [OFF[seed][i]]  # , ER[seed][i]]
+        i = 1
+        metric_dict[seed] = [OFF[seed][i], NONE[seed][i], EWC[seed][i], OEWC[seed][i], SI[seed][i],
+                             LWF[seed][i], EXACT[seed][i]]#, ER[seed][i]]
 
-            key = "average"
-            prec[seed] = [OFF[seed][i][key]]  # , ER[seed][i][key]]
-        else:
-            i = 0
-            ave_prec[seed] = [OFF[seed][i], NONE[seed][i], EWC[seed][i], OEWC[seed][i], SI[seed][i],
-                              LWF[seed][i]]#, ER[seed][i]]
-
-            i = 1
-            metric_dict[seed] = [OFF[seed][i], NONE[seed][i], EWC[seed][i], OEWC[seed][i], SI[seed][i],
-                                 LWF[seed][i]]#, ER[seed][i]]
-
-            key = "average"
-            prec[seed] = [OFF[seed][i][key], NONE[seed][i][key], EWC[seed][i][key], OEWC[seed][i][key],
-                          SI[seed][i][key], LWF[seed][i][key]]#, ER[seed][i][key]]
+        key = "average"
+        prec[seed] = [OFF[seed][i][key], NONE[seed][i][key], EWC[seed][i][key], OEWC[seed][i][key],
+                      SI[seed][i][key], LWF[seed][i][key], EXACT[seed][i][key]]#, ER[seed][i][key]]
 
 
 
@@ -243,14 +216,9 @@ if __name__ == '__main__':
     title = "{}  -  {}".format(args.experiment, scheme)
 
     # select names / colors / ids
-    if args.only_all_replay:
-        names = ["Replay All"]
-        colors = ["black"]
-        ids = [0]
-    else:
-        names = ["Replay All", "EWC", "Online EWC", "SI", "LwF", "None"]#, "Experience Replay"]
-        colors = ["black", "lightblue", "blue", "green", "goldenrod", "grey"]#, "red"]
-        ids = [0,2,3,4,5,1]#,6]
+    names = ["Full Replay (increasing)", "Exact replay (fixed)", "EWC", "Online EWC", "SI", "LwF", "None"]
+    colors = ["black", "brown", "lightblue", "blue", "green", "goldenrod", "grey"]
+    ids = [0,6,2,3,4,5,1]
 
     # open pdf
     pp = visual_plt.open_pdf("{}/{}.pdf".format(args.p_dir, plot_name))

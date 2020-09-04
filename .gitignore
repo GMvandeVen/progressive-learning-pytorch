@@ -12,3 +12,4 @@ notebooks/
 
 test/
 single_*
+compare_both_pre.py

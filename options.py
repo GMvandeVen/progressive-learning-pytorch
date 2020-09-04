@@ -190,6 +190,8 @@ def set_defaults(args, single_task=False, **kwargs):
             args.xdg_prop = 0.7 if args.xdg_prop is None else args.xdg_prop
             args.si_c = 100. if args.si_c is None else args.si_c
             args.ewc_lambda = 1000. if args.ewc_lambda is None else args.ewc_lambda
+            if hasattr(args, 'o_lambda'):
+                args.o_lambda = 1000. if args.o_lambda is None else args.o_lambda
             args.gamma = 1 if args.gamma is None else args.gamma
         elif args.experiment=='permMNIST':
             args.si_c = 10. if args.si_c is None else args.si_c

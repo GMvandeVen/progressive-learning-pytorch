@@ -420,7 +420,9 @@ def run(args, verbose=False):
         if not utils.checkattr(args, 'reinit'):
             BTEs = []
             for task_id in range(args.tasks):
-                BTEs.append([R.loc['BTEs (per task, after {} tasks)'.format(after_task_id+1), 'task {}'.format(task_id+1)] for after_task_id in range(task_id, args.tasks)])
+                BTEs.append([R.loc['BTEs (per task, after {} tasks)'.format(
+                    after_task_id+1
+                ), 'task {}'.format(task_id+1)] for after_task_id in range(task_id, args.tasks)])
             figure = visual_plt.plot_TEs([FTEs], [BTEs], [TEs], ["test"])
             pp.savefig(figure)
 

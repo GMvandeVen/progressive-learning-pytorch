@@ -16,9 +16,9 @@ gamma_list = [1.]
 c_list = [0.001, 0.01, 0.1, 1., 10. , 100., 1000., 10000., 100000., 1000000., 10000000., 100000000.]
 
 
-lamda_list = [1., 10.]
-gamma_list = [1.]
-c_list = [0.01, 0.1,]
+# lamda_list = [1., 10.]
+# gamma_list = [1.]
+# c_list = [0.01, 0.1,]
 
 
 ## Function for specifying input-options and organizing / checking them
@@ -169,8 +169,8 @@ if __name__ == '__main__':
     #--------------------#
 
     # name for plot
-    plot_name = "hyperParams-{}{}-{}".format(args.experiment, args.tasks, args.scenario)
-    scheme = "incremental {} learning".format(args.scenario)
+    plot_name = "hyperParams-{}-{}".format(args.experiment, args.tasks)
+    scheme = "incremental task learning"
     title = "{}  -  {}".format(args.experiment, scheme)
     ylabel = "Average accuracy (after all tasks)"
 

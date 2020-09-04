@@ -150,7 +150,7 @@ def train_cl(model, train_datasets, replay_mode="none", rnt=None, classes_per_ta
                     iters_left = len(data_loader)
             else:
                 # -with "offline replay", there is a separate data-loader for each task
-                batch_size_to_use = int(np.ceil(batch_size/task))
+                batch_size_to_use = batch_size
                 for task_id in range(task):
                     iters_left[task_id] -= 1
                     if iters_left[task_id]==0:
@@ -162,7 +162,7 @@ def train_cl(model, train_datasets, replay_mode="none", rnt=None, classes_per_ta
             # Update # iters left on data-loader(s) of the previous task(s) and, if needed, create new one(s)
             if Exact:
                 up_to_task = task-1
-                batch_size_replay_pt = int(np.ceil(batch_size_replay/up_to_task)) if (up_to_task>1) else batch_size
+                batch_size_replay_pt = int(np.floor(batch_size_replay/up_to_task)) if (up_to_task>1) else batch_size_replay
                 # -need separate replay for each task
                 for task_id in range(up_to_task):
                     batch_size_to_use = min(batch_size_replay_pt, len(previous_datasets[task_id]))
@@ -333,7 +333,7 @@ def train_cl(model, train_datasets, replay_mode="none", rnt=None, classes_per_ta
             Current = True
         elif replay_mode in ('exemplars', 'exact'):
             Exact = True
-            if replay_mode == "exact":
+            if replay_mode=="exact":
                 previous_datasets = train_datasets[:task]
             else:
                 previous_datasets = []

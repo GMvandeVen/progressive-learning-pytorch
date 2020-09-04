@@ -14,7 +14,6 @@ def get_param_stamp_from_args(args):
 
     # -get model architectures
     model = define_classifier(args=args, config=config, device='cpu')
-    train_gen = (hasattr(args, 'replay') and args.replay=="generative" and not checkattr(args, 'feedback'))
 
     # -extract and return param-stamp
     model_name = model.name

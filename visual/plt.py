@@ -15,12 +15,9 @@ def open_pdf(full_path):
     return PdfPages(full_path)
 
 
-
 def stratified_scatter(te_dict, axis_handle, s, names):
     total_alg = len(names)
-
     total_points = len(te_dict[names[0]])
-
     pivot_points = np.arange(-.25, (total_alg+1)*1, step=1)
     interval = .7/(total_points-1)
 
@@ -33,9 +30,183 @@ def stratified_scatter(te_dict, axis_handle, s, names):
                 c='k'
             )
 
-def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None, y_lim=None):
+
+def plot_TEs_twice(ftes, btes, tes, ftes2, btes2, tes2, alg_name,
+                   top_title="No pre-training", bottom_title="Pre-trained conv-layers",
+                   short_names=None, task_num=10, plot_name=None, y_lim=None, colors=None):
     '''Based on https://github.com/neurodata/progressive-learning.'''
 
+    total_alg = len(ftes)
+
+    fontsize = 25
+    ticksize = 22
+    legendsize = 14
+
+    fig = plt.figure(figsize=(26, 16))
+    gs = fig.add_gridspec(17, 27)
+
+    clrs = ["#377eb8", "#e41a1c", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf"]
+    clr_palette = sns.color_palette(clrs, n_colors=8) if colors is None else colors
+
+    # Forward Transfer Efficiency
+    ax = fig.add_subplot(gs[:7, :7])
+    for i, fte in enumerate(ftes):
+        ax.plot(np.arange(1, 1+task_num), fte, color=clr_palette[i], marker='.', markersize=12, label=alg_name[i])
+    ax.set_xticks(np.arange(1, 1+task_num))
+    ax.set_yticks([0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4])
+    if y_lim is not None:
+        ax.set_ylim(y_lim)
+    ax.tick_params(labelsize=ticksize)
+    ax.set_ylabel('Forward Transfer Efficiency (FTE)', fontsize=fontsize)
+    ax.set_xlabel('Number of tasks seen', fontsize=fontsize)
+    right_side = ax.spines["right"]
+    right_side.set_visible(False)
+    top_side = ax.spines["top"]
+    top_side.set_visible(False)
+    ax.hlines(1, 1, 10, colors='grey', linestyles='dashed', linewidth=1.5)
+
+    # Backward Transfer Efficiency
+    ax = fig.add_subplot(gs[:7, 9:16])
+    for i in range(task_num - 1):
+        ns = np.arange(i + 1, task_num + 1)
+        for j in range(0, total_alg):
+            if i == 0:
+                ax.plot(ns, btes[j][i], marker='.', markersize=8, label=alg_name[j], color=clr_palette[j])
+            else:
+                ax.plot(ns, btes[j][i], marker='.', markersize=8, color=clr_palette[j])
+    ax.set_xlabel('Number of tasks seen', fontsize=fontsize)
+    ax.set_ylabel('Backward Transfer Efficiency (BTE)', fontsize=fontsize)
+    ax.set_yticks([0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4])
+    ax.set_xticks(np.arange(1, task_num))
+    if y_lim is not None:
+        ax.set_ylim(y_lim)
+    ax.tick_params(labelsize=ticksize)
+    right_side = ax.spines["right"]
+    right_side.set_visible(False)
+    top_side = ax.spines["top"]
+    top_side.set_visible(False)
+    ax.hlines(1, 1, 10, colors='grey', linestyles='dashed', linewidth=1.5)
+    handles, labels_ = ax.get_legend_handles_labels()
+    ax.set_title(top_title, fontsize=22, fontweight='bold')
+
+    # Transfer Efficiency
+    te_dict = {}
+    short_names = alg_name if short_names is None else short_names
+    for name in alg_name:
+        te_dict[name] = np.zeros(task_num, dtype=float)
+    for count, te in enumerate(tes):
+        for i in range(task_num):
+            te_dict[alg_name[count]][i] = te[i]
+    df = pd.DataFrame.from_dict(te_dict)
+    df = df[alg_name]
+    df = pd.melt(df, var_name='Algorithms', value_name='Transfer Efficieny')
+    ax = fig.add_subplot(gs[:7, 18:23])
+    ax.tick_params(labelsize=22)
+    ax_ = sns.boxplot(
+        x="Algorithms", y="Transfer Efficieny", data=df, palette=clr_palette, whis=np.inf,
+        ax=ax, showfliers=False, notch=1
+    )
+    ax.hlines(1, -1, 8, colors='grey', linestyles='dashed', linewidth=1.5)
+    ax_.set_xlabel('', fontsize=fontsize)
+    ax.set_ylabel('Transfer Efficiency after 10 Tasks', fontsize=fontsize)
+    ax_.set_xticklabels(
+        short_names,
+        fontsize=14, rotation=45, ha="right", rotation_mode='anchor'
+    )
+    if y_lim is not None:
+        ax.set_ylim(y_lim)
+    stratified_scatter(te_dict, ax, 16, names=alg_name)
+    right_side = ax.spines["right"]
+    right_side.set_visible(False)
+    top_side = ax.spines["top"]
+    top_side.set_visible(False)
+
+    # Legend
+    fig.legend(handles, labels_, bbox_to_anchor=(.99, .93), fontsize=legendsize + 5, frameon=False)
+
+
+    # Forward Transfer Efficiency (bottom)
+    ax = fig.add_subplot(gs[10:17, :7])
+    for i, fte in enumerate(ftes2):
+        ax.plot(np.arange(1, 1+task_num), fte, color=clr_palette[i], marker='.', markersize=12, label=alg_name[i])
+    ax.set_xticks(np.arange(1, 1+task_num))
+    ax.set_yticks([0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4])
+    if y_lim is not None:
+        ax.set_ylim(y_lim)
+    ax.tick_params(labelsize=ticksize)
+    ax.set_ylabel('Forward Transfer Efficiency (FTE)', fontsize=fontsize)
+    ax.set_xlabel('Number of tasks seen', fontsize=fontsize)
+    right_side = ax.spines["right"]
+    right_side.set_visible(False)
+    top_side = ax.spines["top"]
+    top_side.set_visible(False)
+    ax.hlines(1, 1, 10, colors='grey', linestyles='dashed', linewidth=1.5)
+
+    # Backward Transfer Efficiency bottom)
+    ax = fig.add_subplot(gs[10:17, 9:16])
+    for i in range(task_num - 1):
+        ns = np.arange(i + 1, task_num + 1)
+        for j in range(0, total_alg):
+            if i == 0:
+                ax.plot(ns, btes2[j][i], marker='.', markersize=8, label=alg_name[j], color=clr_palette[j])
+            else:
+                ax.plot(ns, btes2[j][i], marker='.', markersize=8, color=clr_palette[j])
+    ax.set_xlabel('Number of tasks seen', fontsize=fontsize)
+    ax.set_ylabel('Backward Transfer Efficiency (BTE)', fontsize=fontsize)
+    ax.set_yticks([0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4])
+    ax.set_xticks(np.arange(1, task_num))
+    if y_lim is not None:
+        ax.set_ylim(y_lim)
+    ax.tick_params(labelsize=ticksize)
+    right_side = ax.spines["right"]
+    right_side.set_visible(False)
+    top_side = ax.spines["top"]
+    top_side.set_visible(False)
+    ax.hlines(1, 1, 10, colors='grey', linestyles='dashed', linewidth=1.5)
+    ax.set_title(bottom_title, fontsize=22, fontweight='bold')
+
+    # Transfer Efficiency (bottom)
+    te_dict = {}
+    short_names = alg_name if short_names is None else short_names
+    for name in alg_name:
+        te_dict[name] = np.zeros(task_num, dtype=float)
+    for count, te in enumerate(tes2):
+        for i in range(task_num):
+            te_dict[alg_name[count]][i] = te[i]
+    df = pd.DataFrame.from_dict(te_dict)
+    df = df[alg_name]
+    df = pd.melt(df, var_name='Algorithms', value_name='Transfer Efficieny')
+    ax = fig.add_subplot(gs[10:17, 18:23])
+    ax.tick_params(labelsize=22)
+    ax_ = sns.boxplot(
+        x="Algorithms", y="Transfer Efficieny", data=df, palette=clr_palette, whis=np.inf,
+        ax=ax, showfliers=False, notch=1
+    )
+    ax.hlines(1, -1, 8, colors='grey', linestyles='dashed', linewidth=1.5)
+    ax_.set_xlabel('', fontsize=fontsize)
+    ax.set_ylabel('Transfer Efficiency after 10 Tasks', fontsize=fontsize)
+    ax_.set_xticklabels(
+        short_names,
+        fontsize=14, rotation=45, ha="right", rotation_mode='anchor'
+    )
+    if y_lim is not None:
+        ax.set_ylim(y_lim)
+    stratified_scatter(te_dict, ax, 16, names=alg_name)
+    right_side = ax.spines["right"]
+    right_side.set_visible(False)
+    top_side = ax.spines["top"]
+    top_side.set_visible(False)
+
+    # Save or return figure
+    if plot_name is not None:
+        plt.savefig(plot_name)
+    else:
+        return fig
+
+
+
+def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None, y_lim=None):
+    '''Based on https://github.com/neurodata/progressive-learning.'''
 
     total_alg = len(ftes)
 
@@ -68,7 +239,6 @@ def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None, y_lim=None)
 
     # Backward Transfer Efficiency
     ax = fig.add_subplot(gs[:7, 9:16])
-
     for i in range(task_num - 1):
         ns = np.arange(i + 1, task_num + 1)
         for j in range(0, total_alg):
@@ -76,7 +246,6 @@ def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None, y_lim=None)
                 ax.plot(ns, btes[j][i], marker='.', markersize=8, label=alg_name[j], color=clr_palette[j])
             else:
                 ax.plot(ns, btes[j][i], marker='.', markersize=8, color=clr_palette[j])
-
     ax.set_xlabel('Number of tasks seen', fontsize=fontsize)
     ax.set_ylabel('Backward Transfer Efficiency (BTE)', fontsize=fontsize)
     ax.set_yticks([.4, .6, .8, .9, 1, 1.1, 1.2, 1.3])
@@ -84,7 +253,6 @@ def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None, y_lim=None)
     if y_lim is not None:
         ax.set_ylim(y_lim)
     ax.tick_params(labelsize=ticksize)
-    # ax[0][1].grid(axis='x')
     right_side = ax.spines["right"]
     right_side.set_visible(False)
     top_side = ax.spines["top"]
@@ -109,9 +277,6 @@ def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None, y_lim=None)
         ax=ax, showfliers=False, notch=1
     )
     ax.hlines(1, -1, 8, colors='grey', linestyles='dashed', linewidth=1.5)
-    # sns.boxplot(x="Algorithms", y="Transfer Efficieny", data=mean_df, palette=c, linewidth=3, ax=ax[1][1])
-    # ax_=sns.pointplot(x="Algorithms", y="Transfer Efficieny", data=df_500, join=False, color='grey', linewidth=1.5, ci='sd',ax=ax)
-    # ax_.set_yticks([.4,.6,.8,1, 1.2,1.4])
     ax_.set_xlabel('', fontsize=fontsize)
     ax.set_ylabel('Transfer Efficiency after 10 Tasks', fontsize=fontsize)
     ax_.set_xticklabels(
@@ -120,21 +285,20 @@ def plot_TEs(ftes, btes, tes, alg_name, task_num=10, plot_name=None, y_lim=None)
     )
     if y_lim is not None:
         ax.set_ylim(y_lim)
-
     stratified_scatter(te_dict, ax, 16, names=alg_name)
-
     right_side = ax.spines["right"]
     right_side.set_visible(False)
     top_side = ax.spines["top"]
     top_side.set_visible(False)
 
+    # Legends
     fig.legend(handles, labels_, bbox_to_anchor=(.99, .93), fontsize=legendsize + 5, frameon=False)
 
+    # Save or return figure
     if plot_name is not None:
         plt.savefig(plot_name)
     else:
         return fig
-
 
 
 
@@ -628,77 +792,4 @@ def plot_matrix(array, title=None, xlabel=None, ylabel=None, cmap=plt.cm.Blues, 
     f.tight_layout()
 
     # return the figure
-    return f
-
-
-
-def plot_pr_curves(precision_list, recall_list, names=None, colors=None,
-                   figsize=None, with_dots=False, linestyle="solid", title=None, title_top=None, alpha=None):
-    '''Generates a figure containing multiple groups of "Precision & Recall"-curves in one plot.
-
-    :param precision_list:  <list> of all <lists> of precision-lines to plot (with each line being a <list> as well)
-    :param receall_list:    <list> of all <lists> of precision-lines to plot (with each line being a <list> as well)
-    :param names:           <list> containing the names of each group
-    :param colors:          <list> containing the colors of each group
-    :param title:           <str> title of plot
-    :param title_top:       <str> text to appear on top of the title
-    :return: f:             <figure>'''
-
-    # defaults for "Precision & Recall"-curves
-    ylim = xlim = [0, 1]
-    xlabel = "Recall"
-    ylabel = "Precision"
-
-    # make plot
-    size = (8, 8) if figsize is None else figsize
-    f, axarr = plt.subplots(1, 1, figsize=size)
-
-    # loop over all groups
-    for group_id in range(len(precision_list)):
-        new_group = True
-
-        # loop over all lines
-        n_lines = len(precision_list[group_id])
-        for line_id in range(n_lines):
-          axarr.plot(recall_list[group_id][line_id], precision_list[group_id][line_id], label=None,
-                     color=colors[group_id] if colors is not None else "black", linewidth=2,
-                     alpha=0.5*alpha if alpha is not None else 0.5, marker='o' if with_dots else None,
-                     linestyle=linestyle if type(linestyle) == str else linestyle[group_id])
-          if new_group:
-              sum_recall = recall_list[group_id][line_id]
-              sum_precision = precision_list[group_id][line_id]
-              new_group = False
-          else:
-              sum_recall = [sum(x) for x in zip(sum_recall, recall_list[group_id][line_id])]
-              sum_precision = [sum(x) for x in zip(sum_precision, precision_list[group_id][line_id])]
-
-        # add mean group lines
-        axarr.plot([rec/n_lines for rec in sum_recall], [pre/n_lines for pre in sum_precision],
-                   label=names[group_id] if names is not None else None,
-                   color=colors[group_id] if colors is not None else "black", linewidth=4,
-                   marker='o' if with_dots else None,
-                   linestyle=linestyle if type(linestyle) == str else linestyle[group_id],
-                   alpha=alpha if alpha is not None else 1.)
-
-    # finish layout
-    # -set y-axis
-    if ylim is not None:
-        axarr.set_ylim(ylim)
-    # -set x-axis
-    if xlim is not None:
-        axarr.set_xlim(xlim)
-    # -add axis-labels
-    if xlabel is not None:
-        axarr.set_xlabel(xlabel)
-    if ylabel is not None:
-        axarr.set_ylabel(ylabel)
-    # -add title(s)
-    if title is not None:
-        axarr.set_title(title)
-    if title_top is not None:
-        f.suptitle(title_top)
-    # -add legend
-    if names is not None:
-        axarr.legend()
-
     return f

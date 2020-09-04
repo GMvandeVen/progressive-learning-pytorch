@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 import os
 import numpy as np
 from param_stamp import get_param_stamp_from_args
@@ -14,7 +13,8 @@ def handle_inputs():
     # Set indicator-dictionary for correctly retrieving / checking input options
     kwargs = {'single_task': False, 'only_MNIST': False}
     # Define input options
-    parser = options.define_args(filename="main_cl", description='Compare & combine continual learning approaches.')
+    parser = options.define_args(filename="main_cl",
+                                 description='Compare CL approaches in terms of transfer efficiency.')
     parser = options.add_general_options(parser, **kwargs)
     parser = options.add_eval_options(parser, **kwargs)
     parser = options.add_task_options(parser, **kwargs)
@@ -24,8 +24,12 @@ def handle_inputs():
     parser = options.add_allocation_options(parser, **kwargs)
     # Parse, process (i.e., set defaults for unselected options) and check chosen options
     parser.add_argument('--n-seeds', type=int, default=1)
-    parser.add_argument('--only-all-replay', action='store_true')
-    parser.add_argument('--o-lambda', type=float, help="--> Online EWC: regularisation strength")
+    parser.add_argument('--o-lambda', metavar="LAMBDA", type=float, help="--> Online EWC: regularisation strength")
+    parser.add_argument('--c-500', metavar="C", type=float, help="--> SI: reg strength with 500 training samples")
+    parser.add_argument('--lambda-500', metavar="LAMBDA", type=float,
+                        help="--> EWC: reg strength with 500 training samples")
+    parser.add_argument('--o-lambda-500', metavar="LAMBDA", type=float,
+                        help="--> Online EWC: reg strength with 500 training samples")
     args = parser.parse_args()
     options.set_defaults(args, **kwargs)
     options.check_for_errors(args, **kwargs)
@@ -126,81 +130,101 @@ if __name__ == '__main__':
     args.reinit = True
     REINIT = {}
     REINIT = collect_all(REINIT, seed_list, args, name="Only train on each individual task (using 'reinit')")
+    args.max_samples = 50
+    args.iters = 500
+    REINITp = {}
+    REINITp = collect_all(REINITp, seed_list, args, name="Only train on each individual task (using 'reinit' - 500 samples)")
+    args.max_samples = None
+    args.iters = 5000
     args.reinit = False
-
-
-    ###----"BASELINES"----###
 
     ## None
     args.replay = "none"
     NONE = {}
     NONE = collect_all(NONE, seed_list, args, name="None")
+    args.max_samples = 50
+    args.iters = 500
+    NONEp = {}
+    NONEp = collect_all(NONEp, seed_list, args, name="None - 500 samples")
+    args.max_samples = None
+    args.iters = 5000
 
     ## Offline
-    args.replay = "offline2"
+    args.replay = "offline"
     OFF = {}
-    OFF = collect_all(OFF, seed_list, args, name="Exact replay (increasing amount of replay with each new task)")
+    OFF = collect_all(OFF, seed_list, args, name="Full replay (increasing amount of replay with each new task)")
+    args.max_samples = 50
+    args.iters = 500
+    OFFp = {}
+    OFFp = collect_all(OFFp, seed_list, args, name="Full replay (increasing amount of replay with each new task - 500 samples)")
+    args.max_samples = None
+    args.iters = 5000
     args.replay = "none"
 
     ## Exact replay
-    args.replay = "exact2"
+    args.replay = "exact"
     EXACT = {}
     EXACT = collect_all(EXACT, seed_list, args, name="Exact replay (fixed amount of total replay)")
+    args.max_samples = 50
+    args.iters = 500
+    EXACTp = {}
+    EXACTp = collect_all(EXACTp, seed_list, args, name="Exact replay (fixed amount of total replay - 500 samples)")
+    args.max_samples = None
+    args.iters = 5000
     args.replay = "none"
 
+    ## EWC
+    args.ewc = True
+    EWC = {}
+    EWC = collect_all(EWC, seed_list, args, name="EWC")
+    args.max_samples = 50
+    args.iters = 500
+    args.ewc_lambda = args.lambda_500 if args.lambda_500 is not None else args.ewc_lambda
+    EWCp = {}
+    EWCp = collect_all(EWCp, seed_list, args, name="EWC - 500 samples")
+    args.max_samples = None
+    args.iters = 5000
 
-    # ###----"TASK-SPECIFIC"----####
-    #
-    # ## XdG
-    # args.xdg = True
-    # XDG = {}
-    # XDG = collect_all(XDG, seed_list, args, name="XdG")
-    # args.xdg = False
+    ## online EWC
+    args.online = True
+    args.ewc = True
+    args.ewc_lambda = args.o_lambda
+    OEWC = {}
+    OEWC = collect_all(OEWC, seed_list, args, name="Online EWC")
+    args.max_samples = 50
+    args.iters = 500
+    args.ewc_lambda = args.o_lambda_500 if args.o_lambda_500 is not None else args.ewc_lambda
+    OEWCp = {}
+    OEWCp = collect_all(OEWCp, seed_list, args, name="Online EWC - 500 samples")
+    args.max_samples = None
+    args.iters = 5000
+    args.ewc = False
+    args.online = False
 
+    ## SI
+    args.si = True
+    SI = {}
+    SI = collect_all(SI, seed_list, args, name="SI")
+    args.max_samples = 50
+    args.iters = 500
+    args.si_c = args.c_500 if args.c_500 is not None else args.si_c
+    SIp = {}
+    SIp = collect_all(SIp, seed_list, args, name="SI - 500 samples")
+    args.max_samples = None
+    args.iters = 5000
+    args.si = False
 
-    ###----"REGULARIZATION"----####
-
-    if not args.only_all_replay:
-
-        ## EWC
-        args.ewc = True
-        EWC = {}
-        EWC = collect_all(EWC, seed_list, args, name="EWC")
-
-        ## online EWC
-        # NOTE: using same `lambda` for EWC and Online EWC!!
-        args.online = True
-        args.ewc = True
-        args.ewc_lambda = args.o_lambda
-        OEWC = {}
-        OEWC = collect_all(OEWC, seed_list, args, name="Online EWC")
-        args.ewc = False
-        args.online = False
-
-        ## SI
-        args.si = True
-        SI = {}
-        SI = collect_all(SI, seed_list, args, name="SI")
-        args.si = False
-
-
-        ###----"REPLAY"----###
-
-        ## LwF
-        args.replay = "current"
-        args.distill = True
-        LWF = {}
-        LWF = collect_all(LWF, seed_list, args, name="LwF")
-
-        # ## ER
-        # args.replay = "exemplars"
-        # args.distill = False
-        # args.agem = False
-        # ER = {}
-        # ER = collect_all(ER, seed_list, args, name="ER (budget = {})".format(args.budget))
-        # args.replay = "none"
-        # args.agem = False
-
+    ## LwF
+    args.replay = "current"
+    args.distill = True
+    LWF = {}
+    LWF = collect_all(LWF, seed_list, args, name="LwF")
+    args.max_samples = 50
+    args.iters = 500
+    LWFp = {}
+    LWFp = collect_all(LWFp, seed_list, args, name="LwF - 500 samples")
+    args.max_samples = None
+    args.iters = 5000
 
 
     #-------------------------------------------------------------------------------------------------#
@@ -211,32 +235,26 @@ if __name__ == '__main__':
 
     ave_prec = {}
     metric_dict = {}
-    prec = {}
+    ave_prec_p = {}
+    metric_dict_p = {}
 
     ## For each seed, create list with average precisions
     for seed in seed_list:
-        if args.only_all_replay:
-            i = 0
-            ave_prec[seed] = [OFF[seed][i]]  # , ER[seed][i]]
+        i = 0
+        ave_prec[seed] = [OFF[seed][i], NONE[seed][i], EWC[seed][i], OEWC[seed][i], SI[seed][i],
+                          LWF[seed][i], EXACT[seed][i]]
 
-            i = 1
-            metric_dict[seed] = [OFF[seed][i]]  # , ER[seed][i]]
+        i = 1
+        metric_dict[seed] = [OFF[seed][i], NONE[seed][i], EWC[seed][i], OEWC[seed][i], SI[seed][i],
+                             LWF[seed][i], EXACT[seed][i]]
 
-            key = "average"
-            prec[seed] = [OFF[seed][i][key]]  # , ER[seed][i][key]]
-        else:
-            i = 0
-            ave_prec[seed] = [OFF[seed][i], NONE[seed][i], EWC[seed][i], OEWC[seed][i], SI[seed][i],
-                              LWF[seed][i], EXACT[seed][i]]#, ER[seed][i]]
+        i = 0
+        ave_prec_p[seed] = [OFFp[seed][i], NONEp[seed][i], EWCp[seed][i], OEWCp[seed][i], SIp[seed][i],
+                            LWFp[seed][i], EXACTp[seed][i]]
 
-            i = 1
-            metric_dict[seed] = [OFF[seed][i], NONE[seed][i], EWC[seed][i], OEWC[seed][i], SI[seed][i],
-                                 LWF[seed][i], EXACT[seed][i]]#, ER[seed][i]]
-
-            key = "average"
-            prec[seed] = [OFF[seed][i][key], NONE[seed][i][key], EWC[seed][i][key], OEWC[seed][i][key],
-                          SI[seed][i][key], LWF[seed][i][key], EXACT[seed][i][key]]#, ER[seed][i][key]]
-
+        i = 1
+        metric_dict_p[seed] = [OFFp[seed][i], NONEp[seed][i], EWCp[seed][i], OEWCp[seed][i], SIp[seed][i],
+                               LWFp[seed][i], EXACTp[seed][i]]
 
 
     #-------------------------------------------------------------------------------------------------#
@@ -247,62 +265,44 @@ if __name__ == '__main__':
 
     # name for plot
     plot_name = "summary-{}-{}".format(args.experiment, args.tasks)
-    scheme = "task-incremental learning"
-    title = "{}  -  {}".format(args.experiment, scheme)
+    title = "{}".format(args.experiment)
 
     # select names / colors / ids
-    if args.only_all_replay:
-        names = ["Replay All"]
-        colors = ["black"]
-        ids = [0]
-    else:
-        names = ["Exact Replay (increasing)", "Exact replay(fixed)", "EWC", "Online EWC", "SI", "LwF", "None"]#, "Experience Replay"]
-        colors = ["black", "brown", "lightblue", "blue", "green", "goldenrod", "grey"]#, "red"]
-        ids = [0,6,2,3,4,5,1]#,6]
+    names = ["Replay (increasing amount)", "Replay (fixed amount)", "EWC", "Online EWC", "SI", "LwF", "None"]
+    short_names = ["Replay (increasing)", "Replay (fixed)", "EWC", "Online EWC", "SI", "LwF", "None"]
+    colors = ["darkred", "red", "dodgerblue", "darkblue", "green", "goldenrod", "grey"]
+    ids = [0,6,2,3,4,5,1]
 
     # open pdf
     pp = visual_plt.open_pdf("{}/{}.pdf".format(args.p_dir, plot_name))
     figure_list = []
 
-    # bar-plot
+    # print average accuracy
+    # -not pretrained
     means = [np.mean([ave_prec[seed][id] for seed in seed_list]) for id in ids]
     if len(seed_list)>1:
         sems = [np.sqrt(np.var([ave_prec[seed][id] for seed in seed_list])/(len(seed_list)-1)) for id in ids]
-        cis = [1.96*np.sqrt(np.var([ave_prec[seed][id] for seed in seed_list])/(len(seed_list)-1)) for id in ids]
-    figure = visual_plt.plot_bar(means, names=names, colors=colors, ylabel="average precision (after all tasks)",
-                                 title=title, yerr=cis if len(seed_list)>1 else None, ylim=(0,1))
-    figure_list.append(figure)
-
-    # print results to screen
     print("\n\n"+"#"*60+"\nSUMMARY RESULTS: {}\n".format(title)+"-"*60)
-    for i,name in enumerate(names):
+    for i,name in enumerate(short_names):
         if len(seed_list) > 1:
-            print("{:18s} {:.2f}  (+/- {:.2f}),  n={}".format(name, 100*means[i], 100*sems[i], len(seed_list)))
+            print("{:22s} {:.2f}  (+/- {:.2f}),  n={}".format(name, 100*means[i], 100*sems[i], len(seed_list)))
         else:
-            print("{:18s} {:.2f}".format(name, 100*means[i]))
+            print("{:22s} {:.2f}".format(name, 100*means[i]))
+    print("#"*60)
+    # -pretrained
+    means = [np.mean([ave_prec_p[seed][id] for seed in seed_list]) for id in ids]
+    if len(seed_list)>1:
+        sems = [np.sqrt(np.var([ave_prec_p[seed][id] for seed in seed_list])/(len(seed_list)-1)) for id in ids]
+    print("\n\n"+"#"*60+"\nSUMMARY RESULTS (pre-trained): {}\n".format(title)+"-"*60)
+    for i,name in enumerate(short_names):
+        if len(seed_list) > 1:
+            print("{:22s} {:.2f}  (+/- {:.2f}),  n={}".format(name, 100*means[i], 100*sems[i], len(seed_list)))
+        else:
+            print("{:22s} {:.2f}".format(name, 100*means[i]))
     print("#"*60)
 
-    # line-plot
-    x_axes = OFF[args.seed][1]["x_task"]
-    ave_lines = []
-    sem_lines = []
-    for id in ids:
-        new_ave_line = []
-        new_sem_line = []
-        for line_id in range(len(prec[args.seed][id])):
-            all_entries = [prec[seed][id][line_id] for seed in seed_list]
-            new_ave_line.append(np.mean(all_entries))
-            if len(seed_list) > 1:
-                new_sem_line.append(1.96*np.sqrt(np.var(all_entries)/(len(all_entries)-1)))
-        ave_lines.append(new_ave_line)
-        sem_lines.append(new_sem_line)
-    figure = visual_plt.plot_lines(ave_lines, x_axes=x_axes, line_names=names, colors=colors, title=title,
-                                   xlabel="# of tasks", ylabel="Average precision (on tasks seen so far)",
-                                   list_with_errors=sem_lines if len(seed_list)>1 else None)
-    figure_list.append(figure)
-
-
-    # Plot Transfer Efficiency
+    # plot Transfer Efficiency
+    # -collect not pretrained
     BTEs = []
     FTEs = []
     TEs = []
@@ -326,7 +326,36 @@ if __name__ == '__main__':
         BTEs.append(calc_mean_bte(BTEs_this_alg, task_num=args.tasks, reps=len(seed_list)))
         FTEs.append(calc_mean_te(FTEs_this_alg))
         TEs.append(calc_mean_te(TEs_this_alg))
-    figure = visual_plt.plot_TEs(FTEs, BTEs, TEs, names, task_num=args.tasks, y_lim=(0.5, 1.2))
+    # -collect pretrained
+    BTEsp = []
+    FTEsp = []
+    TEsp = []
+    for id in ids:
+        BTEs_this_alg = []
+        FTEs_this_alg = []
+        TEs_this_alg = []
+        for seed in seed_list:
+            R = metric_dict_p[seed][id]['R']
+            TEs_this_alg_this_seed = R.loc['TEs (per task, after all 10 tasks)']
+            FTEs_this_alg_this_seed = R.loc['FTEs (per task)']
+            BTEs_this_alg_this_seed = []
+            for task_id in range(args.tasks):
+                BTEs_this_alg_this_seed.append(
+                    [R.loc['BTEs (per task, after {} tasks)'.format(after_task_id + 1), 'task {}'.format(task_id + 1)] for
+                     after_task_id in range(task_id, args.tasks)]
+                )
+                BTEs_this_alg.append(BTEs_this_alg_this_seed)
+                FTEs_this_alg.append(FTEs_this_alg_this_seed)
+                TEs_this_alg.append(TEs_this_alg_this_seed)
+        BTEsp.append(calc_mean_bte(BTEs_this_alg, task_num=args.tasks, reps=len(seed_list)))
+        FTEsp.append(calc_mean_te(FTEs_this_alg))
+        TEsp.append(calc_mean_te(TEs_this_alg))
+    # -make plot
+    figure = visual_plt.plot_TEs_twice(FTEsp, BTEsp, TEsp, FTEs, BTEs, TEs, names,
+                                       top_title="500 training samples per task",
+                                       bottom_title="5000 training samples per task",
+                                       short_names=short_names, task_num=args.tasks, y_lim=(0.58, 1.32),
+                                       colors=colors)
     figure_list.append(figure)
 
 
