@@ -175,7 +175,9 @@ def set_defaults(args, single_task=False, **kwargs):
         args.tasks= (
             5 if args.experiment=='splitMNIST' else (10 if args.experiment=="CIFAR100" else 100)
         ) if args.tasks is None else args.tasks
-        args.iters = 2000 if args.iters is None else args.iters
+        args.iters = (2000 if not args.experiment=="CIFAR100" else (
+            500 if hasattr(args, 'max_samples') and args.max_samples==50 else 5000
+        )) if args.iters is None else args.iters
         args.lr = (0.001 if args.experiment=='splitMNIST' else 0.0001) if args.lr is None else args.lr
         args.batch = (128 if args.experiment=='splitMNIST' else 256) if args.batch is None else args.batch
         args.fc_units = (400 if args.experiment=='splitMNIST' else 2000) if args.fc_units is None else args.fc_units
@@ -188,10 +190,14 @@ def set_defaults(args, single_task=False, **kwargs):
             args.gamma = 1. if args.gamma is None else args.gamma
         elif args.experiment=='CIFAR100':
             args.xdg_prop = 0.7 if args.xdg_prop is None else args.xdg_prop
-            args.si_c = 100. if args.si_c is None else args.si_c
-            args.ewc_lambda = 1000. if args.ewc_lambda is None else args.ewc_lambda
+            args.si_c = (
+                10000. if hasattr(args, 'max_samples') and args.max_samples==50 else 100.
+            ) if args.si_c is None else args.si_c
+            args.ewc_lambda = (
+                10000. if hasattr(args, 'max_samples') and args.max_samples==50 else 1000.
+            ) if args.ewc_lambda is None else args.ewc_lambda
             if hasattr(args, 'o_lambda'):
-                args.o_lambda = 1000. if args.o_lambda is None else args.o_lambda
+                args.o_lambda = 10000. if args.o_lambda is None else args.o_lambda
             args.gamma = 1 if args.gamma is None else args.gamma
         elif args.experiment=='permMNIST':
             args.si_c = 10. if args.si_c is None else args.si_c
