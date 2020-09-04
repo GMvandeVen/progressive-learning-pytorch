@@ -207,7 +207,7 @@ def train_cl(model, train_datasets, replay_mode="none", rnt=None, classes_per_ta
                 # Sample replayed training data, move to correct device and store in lists
                 x_ = list()
                 y_ = list()
-                up_to_task = task if replay_mode=="offline" else task-1
+                up_to_task = task-1
                 for task_id in range(up_to_task):
                     x_temp, y_temp = next(data_loader_previous[task_id])
                     x_.append(x_temp.to(device))
